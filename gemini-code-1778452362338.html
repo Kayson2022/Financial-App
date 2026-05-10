@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Wealth & Budget Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-red: #fb7185;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 { font-size: 1.5rem; color: var(--accent-blue); }
+
+        /* Summary Cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .card h3 { margin: 0; font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; }
+        .card p { margin: 10px 0 0; font-size: 1.8rem; font-weight: bold; }
+
+        /* Main Content Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th { background: #334155; font-size: 0.85rem; color: #cbd5e1; }
+
+        input[type="number"], input[type="text"] {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            width: 80px;
+        }
+
+        .btn {
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-add { background: var(--accent-blue); color: #0f172a; margin-bottom: 10px; }
+        .btn-delete { background: transparent; color: var(--accent-red); font-size: 1.2rem; }
+
+        .positive { color: var(--accent-green); }
+        .negative { color: var(--accent-red); }
+
+        .chart-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            height: fit-content;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Monthly Budget Dashboard</h1>
+        <button class="btn btn-add" onclick="addRow()">+ Add Category</button>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Planned Budget</h3>
+            <p id="stat-planned">$0</p>
+        </div>
+        <div class="card">
+            <h3>Actual Spent</h3>
+            <p id="stat-actual">$0</p>
+        </div>
+        <div class="card">
+            <h3>Remaining</h3>
+            <p id="stat-diff">$0</p>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="table-container">
+            <table id="budget-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Planned ($)</th>
+                        <th>Actual ($)</th>
+                        <th>Diff</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Rows injected here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="budgetChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initial Data - Includes examples for tech/investment tracking
+    let budgetData = JSON.parse(localStorage.getItem('myBudgetData')) || [
+        { name: 'Housing/Mortgage', planned: 3500, actual: 3500 },
+        { name: 'Tech Funds (VGT/AVGO)', planned: 1500, actual: 1500 },
+        { name: 'Retirement (401k)', planned: 2000, actual: 2000 },
+        { name: 'Groceries', planned: 600, actual: 640 },
+        { name: 'Utilities/PG&E', planned: 300, actual: 280 }
+    ];
+
+    let myChart;
+
+    function init() {
+        renderTable();
+        updateStats();
+        renderChart();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
+
+        budgetData.forEach((item, index) => {
+            const diff = item.planned - item.actual;
+            const diffClass = diff >= 0 ? 'positive' : 'negative';
+
+            const row = `
+                <tr>
+                    <td><input type="text" value="${item.name}" onchange="updateData(${index}, 'name', this.value)"></td>
+                    <td><input type="number" value="${item.planned}" onchange="updateData(${index}, 'planned', this.value)"></td>
+                    <td><input type="number" value="${item.actual}" onchange="updateData(${index}, 'actual', this.value)"></td>
+                    <td class="${diffClass}">$${diff}</td>
+                    <td><button class="btn-delete" onclick="deleteRow(${index})">&times;</button></td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function updateData(index, field, value) {
+        if (field === 'name') {
+            budgetData[index].name = value;
+        } else {
+            budgetData[index][field] = parseFloat(value) || 0;
+        }
+        saveAndRefresh();
+    }
+
+    function addRow() {
+        budgetData.push({ name: 'New Item', planned: 0, actual: 0 });
+        saveAndRefresh();
+    }
+
+    function deleteRow(index) {
+        budgetData.splice(index, 1);
+        saveAndRefresh();
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem('myBudgetData', JSON.stringify(budgetData));
+        updateStats();
+        renderTable();
+        updateChart();
+    }
+
+    function updateStats() {
+        const totalPlanned = budgetData.reduce((s, i) => s + i.planned, 0);
+        const totalActual = budgetData.reduce((s, i) => s + i.actual, 0);
+        const diff = totalPlanned - totalActual;
+
+        document.getElementById('stat-planned').innerText = `$${totalPlanned.toLocaleString()}`;
+        document.getElementById('stat-actual').innerText = `$${totalActual.toLocaleString()}`;
+        
+        const diffEl = document.getElementById('stat-diff');
+        diffEl.innerText = `$${diff.toLocaleString()}`;
+        diffEl.className = diff >= 0 ? 'positive' : 'negative';
+    }
+
+    function renderChart() {
+        const ctx = document.getElementById('budgetChart').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: budgetData.map(i => i.name),
+                datasets: [{
+                    data: budgetData.map(i => i.actual),
+                    backgroundColor: ['#38bdf8', '#818cf8', '#fb7185', '#4ade80', '#fbbf24', '#a78bfa'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#f8fafc' } }
+                }
+            }
+        });
+    }
+
+    function updateChart() {
+        myChart.data.labels = budgetData.map(i => i.name);
+        myChart.data.datasets[0].data = budgetData.map(i => i.actual);
+        myChart.update();
+    }
+
+    init();
+</script>
+
+</body>
+</html>
