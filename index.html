@@ -12,47 +12,35 @@
     <style>
         :root {
             --bg: #0f172a; --card: #1e293b; --text: #f8fafc;
-            --blue: #38bdf8; --green: #4ade80; --red: #fb7185;
-            --purple: #a855f7; --border: #334155; --muted: #94a3b8;
-            --essential-chart: #64748b; /* Brighter gray for visibility */
+            --blue: #38bdf8; --green: #4ade80; --purple: #a855f7;
+            --border: #334155; --muted: #94a3b8; --red: #fb7185;
         }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 25px; }
         .container { max-width: 1400px; margin: 0 auto; display: none; }
         #login-screen { height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         h1 { font-size: 2.2rem; color: var(--blue); margin: 0; font-weight: 800; }
-
         .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
         .card { background: var(--card); padding: 24px; border-radius: 12px; border: 1px solid var(--border); }
         .card h3 { margin: 0; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; font-weight: 600; }
         .card p { margin: 12px 0 0; font-size: 2.4rem; font-weight: 800; }
-
         .dashboard-layout { display: grid; grid-template-columns: 1fr 400px; gap: 25px; align-items: start; }
-        
         .table-wrap { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 850px; }
         th { background: #1e293b; padding: 15px; text-align: left; font-size: 0.85rem; color: var(--muted); border-bottom: 1px solid var(--border); }
         td { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
-
         .chart-section { background: var(--card); padding: 35px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
         .chart-container { height: 320px; position: relative; }
-
         input, select { background: #0f172a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 0.95rem; }
-        
-        /* Fixed button widths to prevent text clipping */
-        .btn { height: 42px; padding: 0 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-blue { background: var(--blue); color: #0f172a; min-width: 130px; }
-        .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); margin-left: 10px; min-width: 100px; }
-        
+        .btn { height: 42px; padding: 0 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+        .btn-blue { background: var(--blue); color: #0f172a; }
+        .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); margin-left: 10px; }
         .prog-col { display: flex; align-items: center; gap: 12px; min-width: 150px; }
-        .prog-val { width: 45px; font-weight: 700; font-size: 0.9rem; }
+        .prog-val { width: 45px; font-weight: 700; }
         .prog-bar-bg { flex-grow: 1; background: #0f172a; height: 10px; border-radius: 5px; overflow: hidden; }
         .prog-bar-fill { background: var(--blue); height: 100%; transition: width 0.5s ease-out; }
-
         .positive { color: var(--green) !important; }
         .negative { color: var(--red) !important; }
-        .del-btn { color: var(--red); background: none; border: none; font-size: 1.4rem; cursor: pointer; padding: 0 5px; }
     </style>
 </head>
 <body>
@@ -83,23 +71,14 @@
         <div class="table-wrap">
             <table>
                 <thead>
-                    <tr>
-                        <th style="width: 25%;">Category</th>
-                        <th style="width: 15%;">Type</th>
-                        <th style="width: 15%;">Goal ($)</th>
-                        <th style="width: 15%;">Planned ($)</th>
-                        <th style="width: 15%;">Actual ($)</th>
-                        <th style="width: 15%;">Prog</th>
-                        <th style="width: 40px;"></th>
-                    </tr>
+                    <tr><th>Category</th><th>Type</th><th>Goal ($)</th><th>Planned ($)</th><th>Actual ($)</th><th>Prog</th><th></th></tr>
                 </thead>
                 <tbody id="table-body"></tbody>
             </table>
         </div>
-
         <div class="chart-section">
             <div class="chart-container"><canvas id="distChart"></canvas></div>
-            <div style="margin-top:25px; color:var(--muted); font-size:1rem; font-weight: 500;">Spending Distribution</div>
+            <div style="margin-top:25px; color:var(--muted); font-size:1rem; font-weight:500;">Spending Distribution</div>
         </div>
     </div>
 </div>
@@ -119,7 +98,6 @@
     const db = firebase.firestore();
     let state = { items: [] };
     let donutChart;
-
     const nFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
     auth.onAuthStateChanged(user => {
@@ -138,18 +116,12 @@
 
     async function loadData(uid) {
         const doc = await db.collection('users').doc(uid).get();
-        if (doc.exists && doc.data().items && doc.data().items.length > 0) {
-            state = doc.data();
-        } else {
-            forceResetDefaults();
-        }
+        if (doc.exists && doc.data().items && doc.data().items.length > 0) state = doc.data();
+        else forceResetDefaults();
         refreshUI();
     }
 
-    function resetDefaults() {
-        if(confirm("Restore all standard home categories?")) { forceResetDefaults(); }
-    }
-
+    function resetDefaults() { if(confirm("Restore all standard home categories?")) forceResetDefaults(); }
     function forceResetDefaults() {
         state.items = [
             { name: 'Mortgage / Property Tax', type: 'Essential', goal: 0, planned: 3500, actual: 3500 },
@@ -177,30 +149,27 @@
             actT += item.actual; planT += item.planned;
             cData[item.type] += item.actual;
             if(item.type === 'Wealth') wealthT += item.actual;
-            
-            let prog = 0;
-            if(item.goal > 0) {
-                prog = Math.round((item.actual / item.goal) * 100);
-                totalG += item.goal; currentG += item.actual;
-            }
+            if(item.goal > 0) { totalG += item.goal; currentG += item.actual; }
+
+            let pVal = item.goal > 0 ? Math.round((item.actual / item.goal) * 100) : 0;
 
             body.innerHTML += `<tr>
-                <td><input value="${item.name}" onchange="update(${i},'name',this.value)"></td>
-                <td><select onchange="update(${i},'type',this.value)">
+                <td><input value="${item.name}" onchange="upd(${i},'name',this.value)"></td>
+                <td><select onchange="upd(${i},'type',this.value)">
                     <option value="Essential" ${item.type==='Essential'?'selected':''}>Essential</option>
                     <option value="Wealth" ${item.type==='Wealth'?'selected':''}>Wealth</option>
                     <option value="Leisure" ${item.type==='Leisure'?'selected':''}>Leisure</option>
                 </select></td>
-                <td><input type="number" value="${item.goal}" onchange="update(${i},'goal',this.value)"></td>
-                <td><input type="number" value="${item.planned}" onchange="update(${i},'planned',this.value)"></td>
-                <td><input type="number" value="${item.actual}" onchange="update(${i},'actual',this.value)"></td>
+                <td><input type="number" value="${item.goal}" onchange="upd(${i},'goal',this.value)"></td>
+                <td><input type="number" value="${item.planned}" onchange="upd(${i},'planned',this.value)"></td>
+                <td><input type="number" value="${item.actual}" onchange="upd(${i},'actual',this.value)"></td>
                 <td>
                     <div class="prog-col">
-                        <span class="prog-val">${item.goal > 0 ? prog + '%' : 'N/A'}</span>
-                        ${item.goal > 0 ? `<div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${Math.min(prog,100)}%"></div></div>` : ''}
+                        <span class="prog-val">${item.goal > 0 ? pVal + '%' : 'N/A'}</span>
+                        ${item.goal > 0 ? `<div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${Math.min(pVal,100)}%"></div></div>` : ''}
                     </div>
                 </td>
-                <td><button class="del-btn" onclick="remove(${i})">&times;</button></td>
+                <td><button onclick="rem(${i})" style="color:var(--red); background:none; border:none; cursor:pointer; font-size:1.2rem">&times;</button></td>
             </tr>`;
         });
 
@@ -210,26 +179,20 @@
         document.getElementById('s-change').className = net < 0 ? 'negative' : 'positive';
         document.getElementById('s-ratio').innerText = Math.round((wealthT/actT)*100 || 0) + '%';
         document.getElementById('s-goal').innerText = Math.round((currentG/totalG)*100 || 0) + '%';
-
         updateChart(cData);
     }
 
     function updateChart(data) {
         const ctx = document.getElementById('distChart').getContext('2d');
         if (donutChart) donutChart.destroy();
-        
-        // If everything is 0, show a neutral ring
         const hasData = (data.Essential + data.Wealth + data.Leisure) > 0;
-        const chartValues = hasData ? [data.Essential, data.Wealth, data.Leisure] : [1, 0, 0];
-        const chartColors = hasData ? ['#64748b', '#4ade80', '#a855f7'] : ['#334155', '#334155', '#334155'];
-
         donutChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: ['Essential', 'Wealth', 'Leisure'],
                 datasets: [{
-                    data: chartValues,
-                    backgroundColor: chartColors,
+                    data: hasData ? [data.Essential, data.Wealth, data.Leisure] : [1, 0, 0],
+                    backgroundColor: hasData ? ['#38bdf8', '#4ade80', '#a855f7'] : ['#1e293b', '#1e293b', '#1e293b'],
                     borderWidth: 0
                 }]
             },
@@ -237,12 +200,9 @@
         });
     }
 
-    function update(i, f, v) { 
-        state.items[i][f] = (f==='name'||f==='type') ? v : parseFloat(v)||0; 
-        saveData(); 
-    }
-    function remove(i) { state.items.splice(i, 1); saveData(); }
-    function addItem() { state.items.push({name:'New Entry', type:'Essential', goal:0, planned:0, actual:0}); saveData(); }
+    function upd(i, f, v) { state.items[i][f] = (f==='name'||f==='type') ? v : parseFloat(v)||0; saveData(); }
+    function rem(i) { state.items.splice(i, 1); saveData(); }
+    function addItem() { state.items.push({name:'New Item', type:'Essential', goal:0, planned:0, actual:0}); saveData(); }
 </script>
 </body>
 </html>
