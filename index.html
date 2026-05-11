@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kayson Home Manager</title>
+    <title>Kayson Wealth Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -13,33 +13,42 @@
         :root {
             --bg: #0f172a; --card: #1e293b; --text: #f8fafc;
             --blue: #38bdf8; --green: #4ade80; --red: #fb7185;
-            --border: #334155; --purple: #a855f7;
+            --purple: #a855f7; --border: #334155;
         }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; display: none; }
+        .container { max-width: 1200px; margin: 0 auto; display: none; }
         #login-screen { height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { font-size: 1.8rem; color: var(--blue); margin: 0; }
+
+        /* Summary Cards */
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .card h3 { margin: 0; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+        .card p { margin: 10px 0 0; font-size: 1.8rem; font-weight: 700; }
+
+        /* Layout Columns */
+        .main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
         
-        .nav { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .nav-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-weight: 600; padding: 12px 20px; border-radius: 8px; }
-        .nav-btn.active { background: var(--card); color: var(--blue); }
-
-        .tab-content { display: none; animation: fadeIn 0.3s ease; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
-        .card h3 { margin: 0; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; }
-        .card p { margin: 8px 0 0; font-size: 1.5rem; font-weight: 700; }
-
-        .table-wrap { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+        .table-wrap { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #334155; padding: 12px; text-align: left; font-size: 0.75rem; color: #cbd5e1; }
-        td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        th { background: #1e293b; padding: 12px 15px; text-align: left; font-size: 0.75rem; color: #94a3b8; border-bottom: 1px solid var(--border); }
+        td { padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
-        input, select { background: #0f172a; border: 1px solid var(--border); color: white; padding: 6px; border-radius: 4px; width: 100%; box-sizing: border-box; }
-        .btn { padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; }
+        /* Chart Section */
+        .chart-box { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .chart-container { height: 280px; position: relative; margin-top: 10px; }
+
+        /* Inputs */
+        input, select { background: #0f172a; border: 1px solid var(--border); color: white; padding: 6px 10px; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
         .btn-blue { background: var(--blue); color: #0f172a; }
+        
+        /* Progress Bar */
+        .prog-bg { background: #0f172a; height: 6px; border-radius: 3px; margin-top: 4px; overflow: hidden; width: 100%; }
+        .prog-fill { background: var(--blue); height: 100%; transition: 0.3s; }
+        
         .positive { color: var(--green); }
         .negative { color: var(--red); }
     </style>
@@ -47,45 +56,44 @@
 <body>
 
 <div id="login-screen">
-    <h2 style="color: var(--blue)">Home Personal Dashboard</h2>
-    <button class="btn btn-blue" onclick="login()">Sign In</button>
+    <h1>Kayson Wealth Dashboard</h1>
+    <button class="btn btn-blue" style="margin-top:20px" onclick="login()">Access Secure Vault</button>
 </div>
 
 <div class="container" id="app-container">
-    <div class="nav">
-        <button class="nav-btn active" onclick="showTab('home-budget')">House Budget</button>
-        <button class="nav-btn" onclick="showTab('goals')">Future Projects</button>
+    <header>
+        <h1>Wealth Dashboard</h1>
+        <div>
+            <button class="btn btn-blue" onclick="addItem()">+ Category</button>
+            <button class="btn" style="background:transparent; color:#94a3b8; font-size:0.8rem;" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="summary-grid">
+        <div class="card"><h3>Actual Spent</h3><p id="s-actual">$0</p></div>
+        <div class="card"><h3>Net Change</h3><p id="s-change">$0</p></div>
+        <div class="card"><h3>Wealth Ratio</h3><p id="s-ratio" style="color:var(--green)">0%</p></div>
+        <div class="card"><h3>Goal Progress</h3><p id="s-goal">0%</p></div>
     </div>
 
-    <div id="home-budget" class="tab-content active">
-        <div class="grid">
-            <div class="card"><h3>Monthly Spend</h3><p id="total-actual">$0</p></div>
-            <div class="card"><h3>Utility Impact</h3><p id="utility-total" style="color: var(--purple)">$0</p></div>
-            <div class="card"><h3>Savings Contribution</h3><p id="savings-total" style="color: var(--green)">$0</p></div>
-        </div>
+    <div class="main-layout">
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Home Category</th><th>Type</th><th>Planned ($)</th><th>Actual ($)</th><th></th></tr></thead>
-                <tbody id="budget-body"></tbody>
+                <thead>
+                    <tr><th>Category</th><th>Type</th><th>Goal ($)</th><th>Planned ($)</th><th>Actual ($)</th><th>Progress</th><th></th></tr>
+                </thead>
+                <tbody id="table-body"></tbody>
             </table>
         </div>
-        <button class="btn btn-blue" onclick="addItem('budget')">+ Add Household Item</button>
-    </div>
 
-    <div id="goals" class="tab-content">
-        <div class="grid" id="goals-grid"></div>
-        <div class="table-wrap">
-            <table>
-                <thead><tr><th>Project/Goal</th><th>Target ($)</th><th>Saved ($)</th><th>%</th><th></th></tr></thead>
-                <tbody id="goals-body"></tbody>
-            </table>
+        <div class="chart-box">
+            <div class="chart-container"><canvas id="spendingChart"></canvas></div>
+            <p style="margin-top:15px; font-size:0.8rem; color:#94a3b8">Spending Distribution</p>
         </div>
-        <button class="btn btn-blue" onclick="addItem('milestones')">+ New Project/Goal</button>
     </div>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG (SAME AS BEFORE) ---
     const firebaseConfig = {
         apiKey: "AIzaSyDI-pKwAvALBeOrdZAEXNEoI2B0NEZXHd8",
         authDomain: "financial-app-735b0.firebaseapp.com",
@@ -99,7 +107,8 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    let state = { budget: [], milestones: [] };
+    let state = { items: [] };
+    let myChart;
 
     auth.onAuthStateChanged(user => {
         if (user) {
@@ -113,26 +122,19 @@
     });
 
     function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    function showTab(id) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        event.target.classList.add('active');
-    }
+    function logout() { auth.signOut(); }
 
     async function loadData(uid) {
         const doc = await db.collection('users').doc(uid).get();
         if (doc.exists) {
             state = doc.data();
         } else {
-            state = { 
-                budget: [
-                    { name: 'Mortgage/Insurance', type: 'Fixed', planned: 3500, actual: 3500 },
-                    { name: 'PG&E Utilities', type: 'Utility', planned: 350, actual: 0 },
-                    { name: 'Education Fund', type: 'Savings', planned: 500, actual: 0 }
-                ],
-                milestones: [{ name: 'Kitchen Upgrade', target: 15000, saved: 2000 }]
-            };
+            state = { items: [
+                { name: 'Mortgage', type: 'Essential', goal: 0, planned: 3500, actual: 3500 },
+                { name: '401(k) Catch-up', type: 'Wealth', goal: 32500, planned: 2000, actual: 2000 },
+                { name: 'Utilities/PG&E', type: 'Essential', goal: 0, planned: 300, actual: 285 },
+                { name: 'Leisure Travel', type: 'Leisure', goal: 5000, planned: 500, actual: 400 }
+            ]};
             saveData();
         }
         refreshUI();
@@ -145,60 +147,74 @@
     }
 
     function refreshUI() {
-        const bBody = document.getElementById('budget-body');
-        bBody.innerHTML = '';
-        let actT = 0, utilT = 0, saveT = 0;
+        const body = document.getElementById('table-body');
+        body.innerHTML = '';
+        let actT = 0, planT = 0, wealthT = 0, goalProgT = 0, goalTargetT = 0;
+        let chartData = { Essential: 0, Wealth: 0, Leisure: 0 };
 
-        state.budget.forEach((item, i) => {
-            actT += item.actual;
-            if(item.type === 'Utility') utilT += item.actual;
-            if(item.type === 'Savings') saveT += item.actual;
+        state.items.forEach((item, i) => {
+            actT += item.actual; planT += item.planned;
+            chartData[item.type] += item.actual;
+            if(item.type === 'Wealth') wealthT += item.actual;
+            
+            let progPct = 0;
+            if(item.goal > 0) {
+                progPct = Math.round((item.actual / item.goal) * 100);
+                goalProgT += item.actual; goalTargetT += item.goal;
+            }
 
-            bBody.innerHTML += `<tr>
-                <td><input value="${item.name}" onchange="update('budget',${i},'name',this.value)"></td>
-                <td><select onchange="update('budget',${i},'type',this.value)">
-                    <option value="Fixed" ${item.type==='Fixed'?'selected':''}>Fixed</option>
-                    <option value="Utility" ${item.type==='Utility'?'selected':''}>Utility</option>
-                    <option value="Savings" ${item.type==='Savings'?'selected':''}>Savings</option>
-                    <option value="Personal" ${item.type==='Personal'?'selected':''}>Personal</option>
+            body.innerHTML += `<tr>
+                <td><input value="${item.name}" onchange="update(${i},'name',this.value)"></td>
+                <td><select onchange="update(${i},'type',this.value)">
+                    <option value="Essential" ${item.type==='Essential'?'selected':''}>Essential</option>
+                    <option value="Wealth" ${item.type==='Wealth'?'selected':''}>Wealth</option>
+                    <option value="Leisure" ${item.type==='Leisure'?'selected':''}>Leisure</option>
                 </select></td>
-                <td><input type="number" value="${item.planned}" onchange="update('budget',${i},'planned',this.value)"></td>
-                <td><input type="number" value="${item.actual}" onchange="update('budget',${i},'actual',this.value)"></td>
-                <td><button onclick="remove('budget',${i})" style="background:none; border:none; color:var(--red); cursor:pointer">&times;</button></td>
+                <td><input type="number" value="${item.goal}" onchange="update(${i},'goal',this.value)"></td>
+                <td><input type="number" value="${item.planned}" onchange="update(${i},'planned',this.value)"></td>
+                <td><input type="number" value="${item.actual}" onchange="update(${i},'actual',this.value)"></td>
+                <td>
+                    <div style="font-size:0.75rem">${item.goal > 0 ? progPct + '%' : 'N/A'}</div>
+                    ${item.goal > 0 ? `<div class="prog-bg"><div class="prog-fill" style="width:${Math.min(progPct,100)}%"></div></div>` : ''}
+                </td>
+                <td><button onclick="remove(${i})" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1.2rem">&times;</button></td>
             </tr>`;
         });
 
-        document.getElementById('total-actual').innerText = `$${actT.toLocaleString()}`;
-        document.getElementById('utility-total').innerText = `$${utilT.toLocaleString()}`;
-        document.getElementById('savings-total').innerText = `$${saveT.toLocaleString()}`;
+        const netChange = planT - actT;
+        document.getElementById('s-actual').innerText = `$${actT.toLocaleString()}`;
+        document.getElementById('s-change').innerText = (netChange >= 0 ? '$' : '-$') + Math.abs(netChange).toLocaleString();
+        document.getElementById('s-change').className = netChange >= 0 ? 'positive' : 'negative';
+        document.getElementById('s-ratio').innerText = Math.round((wealthT/actT)*100 || 0) + '%';
+        document.getElementById('s-goal').innerText = (goalTargetT > 0 ? Math.round((goalProgT/goalTargetT)*100) : 0) + '%';
 
-        const gBody = document.getElementById('goals-body');
-        const gGrid = document.getElementById('goals-grid');
-        gBody.innerHTML = ''; gGrid.innerHTML = '';
+        updateChart(chartData);
+    }
 
-        state.milestones.forEach((m, i) => {
-            const pct = Math.min(Math.round((m.saved / m.target) * 100), 100) || 0;
-            gGrid.innerHTML += `<div class="card"><h3>${m.name}</h3><p>${pct}%</p><div style="font-size:0.7rem; color:#94a3b8">Progress toward $${m.target.toLocaleString()}</div></div>`;
-            gBody.innerHTML += `<tr>
-                <td><input value="${m.name}" onchange="update('milestones',${i},'name',this.value)"></td>
-                <td><input type="number" value="${m.target}" onchange="update('milestones',${i},'target',this.value)"></td>
-                <td><input type="number" value="${m.saved}" onchange="update('milestones',${i},'saved',this.value)"></td>
-                <td>${pct}%</td>
-                <td><button onclick="remove('milestones',${i})" style="background:none; border:none; color:var(--red); cursor:pointer">&times;</button></td>
-            </tr>`;
+    function updateChart(data) {
+        const ctx = document.getElementById('spendingChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Essential', 'Wealth', 'Leisure'],
+                datasets: [{
+                    data: [data.Essential, data.Wealth, data.Leisure],
+                    backgroundColor: ['#1e293b', '#4ade80', '#a855f7'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: { cutout: '75%', plugins: { legend: { display: false } } }
         });
     }
 
-    function update(tab, i, f, v) {
-        state[tab][i][f] = (f==='planned'||f==='actual'||f==='target'||f==='saved') ? parseFloat(v)||0 : v;
-        saveData();
+    function update(i, f, v) { 
+        state.items[i][f] = (f==='goal'||f==='planned'||f==='actual') ? parseFloat(v)||0 : v; 
+        saveData(); 
     }
-    function remove(tab, i) { state[tab].splice(i,1); saveData(); }
-    function addItem(tab) {
-        const obj = tab === 'budget' ? {name:'New Item', type:'Fixed', planned:0, actual:0} : {name:'New Goal', target:1000, saved:0};
-        state[tab].push(obj);
-        saveData();
-    }
+    function remove(i) { state.items.splice(i, 1); saveData(); }
+    function addItem() { state.items.push({name:'New', type:'Essential', goal:0, planned:0, actual:0}); saveData(); }
 </script>
 </body>
 </html>
