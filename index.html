@@ -37,13 +37,13 @@
         .chart-section { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
         .chart-container { height: 320px; position: relative; }
 
-        input, select { background: #0f172a; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        input, select { background: #0f172a; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 0.9rem; }
         
-        .btn { padding: 10px 22px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; white-space: nowrap; }
         .btn-blue { background: var(--blue); color: #0f172a; }
-        .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); margin-left: 10px; }
+        .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); margin-left: 8px; }
         
-        .prog-col { display: flex; align-items: center; gap: 10px; }
+        .prog-col { display: flex; align-items: center; gap: 10px; min-width: 120px; }
         .prog-bar-bg { flex-grow: 1; background: #0f172a; height: 8px; border-radius: 4px; overflow: hidden; }
         .prog-bar-fill { background: var(--blue); height: 100%; transition: width 0.4s; }
 
@@ -63,7 +63,7 @@
         <h1>Wealth Dashboard</h1>
         <div style="display: flex; align-items: center;">
             <button class="btn btn-blue" onclick="addItem()">+ Category</button>
-            <button class="btn btn-ghost" onclick="resetDefaults()" title="Restores the standard list of home expenses">Reset Defaults</button>
+            <button class="btn btn-ghost" onclick="resetDefaults()">Reset Defaults</button>
             <button class="btn btn-ghost" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -86,7 +86,7 @@
                         <th style="width: 15%;">Planned ($)</th>
                         <th style="width: 15%;">Actual ($)</th>
                         <th style="width: 15%;">Prog</th>
-                        <th style="width: 50px;"></th>
+                        <th style="width: 40px;"></th>
                     </tr>
                 </thead>
                 <tbody id="table-body"></tbody>
@@ -137,23 +137,29 @@
         if (doc.exists) {
             state = doc.data();
         } else {
-            resetDefaults();
+            // Initial Seed if database is totally empty
+            state.items = [
+                { name: 'Mortgage', type: 'Essential', goal: 0, planned: 3500, actual: 3500 },
+                { name: 'Utilities (PG&E)', type: 'Essential', goal: 0, planned: 300, actual: 0 },
+                { name: '401(k) Catch-up', type: 'Wealth', goal: 32500, planned: 2700, actual: 0 }
+            ];
+            saveData();
         }
         refreshUI();
     }
 
-    // THE PRESELECTED STANDARD SET OF EXPENSES
     function resetDefaults() {
-        if(confirm("This will replace your current list with the standard home expense set. Continue?")) {
+        if(confirm("Restore all standard home categories? This will replace your current list.")) {
             state.items = [
                 { name: 'Mortgage', type: 'Essential', goal: 0, planned: 3500, actual: 3500 },
-                { name: 'Utilities/PG&E', type: 'Essential', goal: 0, planned: 300, actual: 0 },
-                { name: 'Groceries', type: 'Essential', goal: 0, planned: 800, actual: 0 },
+                { name: 'Utilities (PG&E)', type: 'Essential', goal: 0, planned: 300, actual: 0 },
                 { name: 'Insurance (Home/Auto)', type: 'Essential', goal: 0, planned: 250, actual: 0 },
+                { name: 'Internet & Mobile', type: 'Essential', goal: 0, planned: 180, actual: 0 },
+                { name: 'Groceries', type: 'Essential', goal: 0, planned: 800, actual: 0 },
                 { name: '401(k) Catch-up', type: 'Wealth', goal: 32500, planned: 2700, actual: 0 },
-                { name: 'Brokerage / ETFs', type: 'Wealth', goal: 50000, planned: 1000, actual: 0 },
-                { name: 'Leisure Travel', type: 'Leisure', goal: 8000, planned: 500, actual: 0 },
-                { name: 'Dining Out', type: 'Leisure', goal: 0, planned: 400, actual: 0 }
+                { name: 'College 529 Plan', type: 'Wealth', goal: 10000, planned: 500, actual: 0 },
+                { name: 'Ho Chi Minh City Trip', type: 'Leisure', goal: 8000, planned: 500, actual: 0 },
+                { name: 'Dining & Personal', type: 'Leisure', goal: 0, planned: 400, actual: 0 }
             ];
             saveData();
         }
@@ -225,7 +231,7 @@
                     borderWidth: 0
                 }]
             },
-            options: { cutout: '80%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
+            options: { cutout: '82%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
         });
     }
 
